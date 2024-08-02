@@ -130,7 +130,7 @@ public class EmployeeController {
 
     /**
      * 编辑员工信息
-     * @param employee
+     * @param employeeDTO
      * @return
      */
     @PutMapping

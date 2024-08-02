@@ -44,7 +44,7 @@ public interface EmployeeService {
 
     /**
      * 编辑员工信息
-     * @param employee
+     * @param employeeDTO
      */
     void update(EmployeeDTO employeeDTO);
 }
