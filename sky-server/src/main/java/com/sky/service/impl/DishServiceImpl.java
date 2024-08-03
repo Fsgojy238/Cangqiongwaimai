@@ -55,7 +55,7 @@ public class DishServiceImpl implements DishService {
 
     /**
      * 菜品分页查询
-     * @param dishPageQueryDTODTO
+     * @param dishPageQueryDTO
      * @return
      */
     public PageResult pageQuery(DishPageQueryDTO dishPageQueryDTO) {
