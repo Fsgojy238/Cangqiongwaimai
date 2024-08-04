@@ -22,6 +22,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Objects;
 
 @Service
 @Slf4j
@@ -74,11 +75,12 @@ public class DishServiceImpl implements DishService {
      * 批量删除菜品
      * @param ids
      */
+    @Transactional
     public void deleteBatch(List<Long> ids) {
         //判断当前菜品是否能够删除--是否存在起售中的菜品？
         for (Long id : ids) {
             Dish dish = dishMapper.getById(id);
-            if(dish.getStatus()== StatusConstant.ENABLE){
+            if(Objects.equals(dish.getStatus(), StatusConstant.ENABLE)){
                 //当前菜品处于起售中，不能删除
                 throw new DeletionNotAllowedException(MessageConstant.DISH_ON_SALE);
             }
