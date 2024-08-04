@@ -8,6 +8,7 @@ import com.sky.dto.DishDTO;
 import com.sky.dto.DishPageQueryDTO;
 import com.sky.entity.Dish;
 import com.sky.entity.DishFlavor;
+import com.sky.entity.Setmeal;
 import com.sky.exception.DeletionNotAllowedException;
 import com.sky.mapper.DishFlavorMapper;
 import com.sky.mapper.DishMapper;
@@ -38,13 +39,14 @@ public class DishServiceImpl implements DishService {
 
     /**
      * 新增菜品
+     *
      * @param dishDTO
      */
     @Transactional
     public void saveWithFlavor(DishDTO dishDTO) {
 
         Dish dish = new Dish();
-        BeanUtils.copyProperties(dishDTO,dish);
+        BeanUtils.copyProperties(dishDTO, dish);
         //向菜品表插入1条数据
         dishMapper.insert(dish);
         //获取刚刚生成的主键id值
@@ -52,7 +54,7 @@ public class DishServiceImpl implements DishService {
 
         //向口味表插入数据
         List<DishFlavor> flavors = dishDTO.getFlavors();
-        if(flavors !=null && !flavors.isEmpty()){
+        if (flavors != null && !flavors.isEmpty()) {
             for (DishFlavor flavor : flavors) {
                 flavor.setDishId(dishId);
             }
@@ -63,6 +65,7 @@ public class DishServiceImpl implements DishService {
 
     /**
      * 菜品分页查询
+     *
      * @param dishPageQueryDTO
      * @return
      */
@@ -74,6 +77,7 @@ public class DishServiceImpl implements DishService {
 
     /**
      * 批量删除菜品
+     *
      * @param ids
      */
     @Transactional
@@ -81,7 +85,7 @@ public class DishServiceImpl implements DishService {
         //判断当前菜品是否能够删除--是否存在起售中的菜品？
         for (Long id : ids) {
             Dish dish = dishMapper.getById(id);
-            if(Objects.equals(dish.getStatus(), StatusConstant.ENABLE)){
+            if (Objects.equals(dish.getStatus(), StatusConstant.ENABLE)) {
                 //当前菜品处于起售中，不能删除
                 throw new DeletionNotAllowedException(MessageConstant.DISH_ON_SALE);
             }
@@ -89,7 +93,7 @@ public class DishServiceImpl implements DishService {
 
         //判断当前菜品是否能够删除--是否被套餐关联？
         List<Long> setmealIds = setmealDishMapper.getSetmealIdsByDishIds(ids);
-        if(setmealIds !=null && !setmealIds.isEmpty()){
+        if (setmealIds != null && !setmealIds.isEmpty()) {
             //当前菜品被套餐关联类，不能删除
             throw new DeletionNotAllowedException(MessageConstant.DISH_BE_RELATED_BY_SETMEAL);
         }
@@ -103,6 +107,7 @@ public class DishServiceImpl implements DishService {
 
     /**
      * 根据id查询菜品和对应的口味数据
+     *
      * @param id
      * @return
      */
@@ -115,19 +120,20 @@ public class DishServiceImpl implements DishService {
 
         //3.将两个数据封装在一起并返回
         DishVO dishVO = new DishVO();
-        BeanUtils.copyProperties(dish,dishVO);
+        BeanUtils.copyProperties(dish, dishVO);
         dishVO.setFlavors(dishFlavors);
         return dishVO;
     }
 
     /**
      * 修改菜品
+     *
      * @param dishDTO
      */
     @Transactional
     public void updateWithFlavor(DishDTO dishDTO) {
         Dish dish = new Dish();
-        BeanUtils.copyProperties(dishDTO,dish);
+        BeanUtils.copyProperties(dishDTO, dish);
         //修改菜品信息
         dishMapper.update(dish);
 
@@ -138,12 +144,45 @@ public class DishServiceImpl implements DishService {
         dishFlavorMapper.deleteByDishId(dishId);
 
         List<DishFlavor> flavors = dishDTO.getFlavors();
-        if(flavors !=null && !flavors.isEmpty()){
+        if (flavors != null && !flavors.isEmpty()) {
             for (DishFlavor flavor : flavors) {
                 flavor.setDishId(dishId);
             }
             //直接传入集合，批量插入数据
             dishFlavorMapper.insertBatch(flavors);
         }
+    }
+
+    /**
+     * 菜品起售停售
+     *
+     * @param status
+     * @param id
+     */
+    @Transactional
+    public void starOrStop(Integer status, Long id) {
+        Dish dish = Dish.builder()
+                .status(status)
+                .id(id)
+                .build();
+        dishMapper.update(dish);
+
+        //如果是停售操作，还需要将包含当前菜品的套餐也停售
+        if (Objects.equals(status, StatusConstant.DISABLE)) {
+            List<Long> dishIds = new ArrayList<>();
+            dishIds.add(id);
+            List<Long> setmealIdsByDishIds = setmealDishMapper.getSetmealIdsByDishIds(dishIds);
+            //如果当前菜品关联了套餐，需将这些被关联的套餐停售
+            if (setmealIdsByDishIds != null) {
+                for (Long setmealId : setmealIdsByDishIds) {
+                    Setmeal setmeal = Setmeal.builder()
+                            .status(StatusConstant.DISABLE)
+                            .id(setmealId)
+                            .build();
+                    setmealDishMapper.update(setmeal);
+                }
+            }
+        }
+
     }
 }
