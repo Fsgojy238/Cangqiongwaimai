@@ -38,7 +38,7 @@ public interface SetmealMapper {
 
     /**
      * 根据套餐id查询套餐信息
-     * @param ids
+     * @param id
      * @return
      */
     @Select("select * from setmeal where id = #{id}")
