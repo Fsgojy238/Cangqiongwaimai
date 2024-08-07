@@ -63,4 +63,11 @@ public interface DishMapper {
      * @return
      */
     List<Dish> selectByCategoryId(Dish dish);
+
+    /**
+     *
+     * @param SetmealId
+     * @return
+     */
+    List<Dish> getDishBySetmealId(Long SetmealId);
 }
